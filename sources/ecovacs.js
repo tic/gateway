@@ -186,7 +186,7 @@ module.exports = {
 
                 await Promise.all(connections);
                 collect();
-                collectionInterval = setInterval(collect, 300000); // collect data every 5 minutes
+                collectionInterval = setInterval(collect, 180000); // collect data every 5 minutes
             });
         }).catch((e) => {
             console.error(e.message);
