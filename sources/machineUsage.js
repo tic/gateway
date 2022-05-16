@@ -39,6 +39,7 @@ async function collect() {
     };
 
     // Drain the collected data
+    console.info("draining machineUsage data for %s", metadata.machineName);
     sinks.sif.drain(
         "machineUsage",
         metrics,
