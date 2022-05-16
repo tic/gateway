@@ -2,6 +2,8 @@
   "dependencies": {
     "amazon-cognito-identity-js": "^5.2.8",
     "dotenv": "^16.0.1",
-    "mqtt": "^4.3.7"
+    "ecovacs-deebot": "^0.8.0",
+    "mqtt": "^4.3.7",
+    "node-machine-id": "^1.1.12"
   }
 }

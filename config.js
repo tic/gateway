@@ -14,7 +14,9 @@ function getConfig() {
         },
         sources: {
             ecovacs: {
-    
+                email: env.ECOVACS_EMAIL,
+                password: env.ECOVACS_PASSWORD,
+                country: env.ECOVACS_COUNTRY
             }
         }
     }
