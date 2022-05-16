@@ -19,7 +19,7 @@ async function refreshToken() {
         {
             onSuccess: function(result) {
                 const token = result.getIdToken().getJwtToken();
-                console.info("[%d] refreshed sif token", new Date().getTime() / 1000);
+                console.info("refreshed sif token");
                 idToken = token;
             },
             onFailure: function(err) {
@@ -29,7 +29,7 @@ async function refreshToken() {
     );
 }
 
-async function drain(app_name, metrics, metadata={}, timestamp=Date.now(), device_id=null) {
+async function drain(app_name, metrics, metadata={}, timestamp=Date.now() / 1000, device_id=null) {
     if(app_name === undefined || app_name === null) {
         console.error("sink 'sif' requires non-null app name");
         return;
@@ -44,10 +44,10 @@ async function drain(app_name, metrics, metadata={}, timestamp=Date.now(), devic
         app_name: app_name,
         token: idToken,
         data: {
-            timestamp: timestamp,
+            time: timestamp,
             device: device_id,
             metadata: metadata,
-            metrics: metrics
+            payload: metrics
         }
     };
 
