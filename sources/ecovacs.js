@@ -111,14 +111,13 @@ async function collect() {
     
     for(const [metrics, metadata] of packets) {
         console.info("draining data for ecovacs device %s", metadata.device_id);
-        console.log(metrics);
-        // sinks.sif.drain(
-        //     "ecovacs",
-        //     metrics,
-        //     metadata,
-        //     undefined,
-        //     metadata.device_id
-        // );
+        sinks.sif.drain(
+            "ecovacs",
+            metrics,
+            metadata,
+            undefined,
+            metadata.device_id
+        );
     }
 }
 
