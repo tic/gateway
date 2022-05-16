@@ -76,19 +76,19 @@ async function collect() {
             }
             
             if(data[1] !== undefined) {
-                if(data[0] !== undefined) {
-                    if(data[1] === "charging" && data[0] >= 100) {
-                        metrics.clean_state = cleanModeMap.idle;
-                    } else {
-                        metrics.clean_state = cleanModeMap[data[1]] ?? cleanModeMap.other;
-                    }
-                } else {
-                    metrics.clean_state = cleanModeMap[data[1]] ?? cleanModeMap.other;
-                }
+                metrics.clean_state = cleanModeMap[data[1]] ?? cleanModeMap.other;
             }
 
             if(data[2] !== undefined) {
-                metrics.charge_state = chargeModeMap[data[2]] ?? chargeModeMap.other;
+                if(data[0] !== undefined) {
+                    if(data[2] === "charging" && data[0] >= 100) {
+                        metrics.charge_state = chargeModeMap.idle;
+                    } else {
+                        metrics.charge_state = chargeModeMap[data[2]] ?? chargeModeMap.other;
+                    }
+                } else {
+                    metrics.charge_state = chargeModeMap[data[2]] ?? chargeModeMap.other;
+                }
             }
 
             if(data[3] !== undefined) {
@@ -111,13 +111,14 @@ async function collect() {
     
     for(const [metrics, metadata] of packets) {
         console.info("draining data for ecovacs device %s", metadata.device_id);
-        sinks.sif.drain(
-            "ecovacs",
-            metrics,
-            metadata,
-            undefined,
-            metadata.device_id
-        );
+        console.log(metrics);
+        // sinks.sif.drain(
+        //     "ecovacs",
+        //     metrics,
+        //     metadata,
+        //     undefined,
+        //     metadata.device_id
+        // );
     }
 }
 
