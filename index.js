@@ -45,7 +45,7 @@ const globalConfig = reloadConfig();
 // Load sinks
 const fs = require("fs");
 var sinkLoadTime = -Date.now();
-const sinks = (async () => {
+var sinks = (async () => {
     const sinkFiles = await fs.promises.readdir("./sinks");
     const sinkNames = (await Promise.all(
         sinkFiles.map(async sinkFile => {
@@ -88,7 +88,7 @@ sinks.then(sinks => {
 // Load sources
 var sourceLoadTime = -Date.now();
 const sources = (async () => {
-    await sinks;
+    sinks = await sinks;
     const sourceFiles = await fs.promises.readdir("./sources");
     const sourceNames = (await Promise.all(
         sourceFiles.map(async sourceFile => {
@@ -106,7 +106,7 @@ const sources = (async () => {
         async (sourceDict, sourceName) => {
             try {
                 const sourceController = require("./sources/" + sourceName);
-                await sourceController.setup(sourceConfigs[sourceName]);
+                await sourceController.setup(sourceConfigs[sourceName], sinks);
                 sourceDict[sourceName] = sourceController;
             } catch(err) {
                 console.error("failed to initialize source '%s' (%s)", sourceName, err);
