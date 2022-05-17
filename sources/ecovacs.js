@@ -22,7 +22,7 @@ const cleanModeMap = {
     auto: 1,
     edge: 2,
     spot: 3,
-    room: 4,
+    singleRoom: 4,
     other: 5
 }
 
