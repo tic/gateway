@@ -27,7 +27,7 @@ var sinks = {};
 function switchInterval(intervalType) {
     clearInterval(collectionInterval);
     intervalLength = intervalType === "active" ? activeInterval : passiveInterval;
-    setInterval(collect, intervalLength);
+    collectionInterval = setInterval(collect, intervalLength);
 }
 
 const chargeModeMap = {
