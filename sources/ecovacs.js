@@ -133,9 +133,14 @@ async function collect() {
 
             // Check to see if the interval needs
             // to be updated (5m->45s or 45s->5m)
+            // Vacuum is active if:
+            // - Battery is less than 100 and not idle
+            // OR
+            // - Clean state is not 'stop'
             const vacuumActive = 
-                (metrics.battery !== undefined && metrics.battery >= 100) &&
-                (metrics.charge_state !== undefined && metrics.charge_state !== chargeModeMap.idle);
+                ((metrics.battery !== undefined && metrics.battery < 100) &&
+                (metrics.charge_state !== undefined && metrics.charge_state !== chargeModeMap.idle)) ||
+                (metrics.clean_state !== undefined && metrics.clean_state !== cleanModeMap.stop);
             if(intervalLength === activeInterval && !vacuumActive) {
                 // If the vacuum is fully charged and
                 // cleaning status is idle, we need to
