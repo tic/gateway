@@ -4,6 +4,7 @@ function getConfig() {
     
     // The config is separated by the various files it needs to read from
     const config = {
+        disableSinks: env.DISABLE_SINKS === "true",
         sinks: {
             sif: {
                 userPoolId: env.SIF_USERPOOLID,

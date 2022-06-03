@@ -42,6 +42,10 @@ console.info = function() {
 const reloadConfig = require("./config").getConfig
 const globalConfig = reloadConfig();
 
+if(globalConfig.disableSinks) {
+    console.info("! ALL SINKS DISABLED !");
+}
+
 // Load sinks
 const fs = require("fs");
 var sinkLoadTime = -Date.now();
@@ -63,7 +67,12 @@ var sinks = (async () => {
         async (sinkDict, sinkName) => {
             try {
                 const sinkController = require("./sinks/" + sinkName);
-                await sinkController.setup(sinkConfigs[sinkName]);
+                if(globalConfig.disableSinks === true) {
+                    sinkController.drain = async function() {
+                        console.info("skipped sink for destination '%s'", sinkName);
+                    };
+                }
+                await sinkController.setup(sinkConfigs[sinkName] ?? {});
                 sinkDict[sinkName] = sinkController;
             } catch(err) {
                 console.error("failed to initialize sink '%s' (%s)", sinkName, err);
