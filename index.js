@@ -101,12 +101,22 @@ const sources = (async () => {
     const sourceFiles = await fs.promises.readdir("./sources");
     const sourceNames = (await Promise.all(
         sourceFiles.map(async sourceFile => {
-            const stat = await fs.promises.stat("./sources/" + sourceFile);
             const regexp = /^(.*)\.js$/i;
-            if(stat.isDirectory() || !regexp.test(sourceFile)) {
+            if(!regexp.test(sourceFile)) {
                 return undefined;
             }
-            return regexp.exec(sourceFile)[1];
+
+            const sourceName = regexp.exec(sourceFile)[1];
+            if(globalConfig.sourceWhitelist.length > 0 && !globalConfig.sourceWhitelist.includes(sourceName)) {
+                return undefined;
+            }
+
+            const stat = await fs.promises.stat("./sources/" + sourceFile);
+            if(stat.isDirectory()) {
+                return undefined;
+            }
+            
+            return sourceName;
         })
     )).filter(s => s!== undefined);
 
