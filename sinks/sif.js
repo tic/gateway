@@ -11,22 +11,28 @@ var cognitoUser = null;
 var broker = null;
 
 async function refreshToken() {
-    cognitoUser.authenticateUser(
-        new ACI.AuthenticationDetails({
-            Username: config.username,
-            Password: config.password
-        }),
-        {
-            onSuccess: function(result) {
-                const token = result.getIdToken().getJwtToken();
-                console.info("refreshed sif token");
-                idToken = token;
-            },
-            onFailure: function(err) {
-                console.error(err);
+    const tokenFinished = new Promise((resolve, _) => {
+        cognitoUser.authenticateUser(
+            new ACI.AuthenticationDetails({
+                Username: config.username,
+                Password: config.password
+            }),
+            {
+                onSuccess: function(result) {
+                    const token = result.getIdToken().getJwtToken();
+                    console.info("refreshed sif token");
+                    idToken = token;
+                    resolve(true);
+                },
+                onFailure: function(err) {
+                    console.error(err);
+                    resolve(false);
+                }
             }
-        }
-    );
+        );
+    });
+
+    return tokenFinished;
 }
 
 async function drain(app_name, metrics, metadata={}, timestamp=Date.now() / 1000, device_id=null) {
@@ -72,7 +78,7 @@ module.exports = {
         broker = mqtt.connect("mqtt://broker.uvasif.org");
 
         // Refresh the token every 58 minutes (tokens valid for 1hr)
-        refreshToken();
+        await refreshToken();
         refreshInterval = setInterval(refreshToken, 3480000);
     },
     cleanup: async () => {
