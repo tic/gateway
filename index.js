@@ -142,7 +142,7 @@ sources.then(sources => {
     console.log(
         "> loaded %d source%s in %ds",
         numSources.length,
-        numSources.length === 1 ? "s" : "",
+        numSources.length === 1 ? "" : "s",
         (sourceLoadTime / 1000).toFixed(3)
     );
 });
