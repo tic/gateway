@@ -77,9 +77,20 @@ module.exports = {
         
         const listReady = new Promise((resolve, _) => {
             nutServer.on("ready", () => {
+                let resolved = false;
+                const connectTimeout = setTimeout(
+                    () => {
+                        resolved = true;
+                        resolve(new Error("connection timed out"));
+                    }, 
+                    10000
+                );
                 nutServer.GetUPSList((list, err) => {
                     upsList = list;
-                    resolve(err)
+                    if(resolved === false) {
+                        clearTimeout(connectTimeout);
+                        resolve(err);
+                    }
                 });
             });
         });
@@ -99,7 +110,7 @@ module.exports = {
         // Wait until the connection has been attempted
         const connectErr = await listReady;
         if(connectErr) {
-            connect.info("nut connect error!");
+            console.info("nut connect error!");
             console.error(connectErr);
             return;
         }
