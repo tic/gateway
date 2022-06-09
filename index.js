@@ -107,7 +107,13 @@ const sources = (async () => {
             }
 
             const sourceName = regexp.exec(sourceFile)[1];
-            if(globalConfig.sourceWhitelist.length > 0 && !globalConfig.sourceWhitelist.includes(sourceName)) {
+            if(
+                (
+                    globalConfig.sourceWhitelist.length > 0 && 
+                    !globalConfig.sourceWhitelist.includes(sourceName)
+                ) ||
+                globalConfig.sourceBlacklist.includes(sourceName)
+            ) {
                 return undefined;
             }
 
@@ -123,14 +129,16 @@ const sources = (async () => {
     const sourceConfigs = globalConfig.sources;
     return sourceNames.reduce(
         async (sourceDict, sourceName) => {
+            sourceDict = await sourceDict;
             try {
                 const sourceController = require("./sources/" + sourceName);
                 await sourceController.setup(sourceConfigs[sourceName], sinks);
                 sourceDict[sourceName] = sourceController;
             } catch(err) {
                 console.error("failed to initialize source '%s' (%s)", sourceName, err);
+            } finally {
+                return sourceDict;
             }
-            return sourceDict;
         },
         {}
     );
@@ -138,11 +146,11 @@ const sources = (async () => {
 
 sources.then(sources => {
     sourceLoadTime += Date.now();
-    const numSources = Object.keys(sources);
+    const numSources = Object.keys(sources).length;
     console.log(
         "> loaded %d source%s in %ds",
-        numSources.length,
-        numSources.length === 1 ? "" : "s",
+        numSources,
+        numSources === 1 ? "" : "s",
         (sourceLoadTime / 1000).toFixed(3)
     );
 });
