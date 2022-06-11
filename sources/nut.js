@@ -15,7 +15,7 @@ async function getDataFromUPS(upsname) {
     return new Promise((resolve, _) => {
         nutServer.GetUPSVars(upsname, (data, err) => {
             if(err) {
-                resolve({});
+                resolve(null);
             } else {
                 resolve(data);
             }
@@ -24,18 +24,29 @@ async function getDataFromUPS(upsname) {
 }
 
 async function collect() {
+    // Prevent some obvious errors that may come
+    // when trying to use an anomalous nut server.
+    if(nutServer === null) {
+        console.info("tried to use nutserver 'null'!");
+    }
+
     // Fetch the data from the ups units
-    const allData = await Promise.all(
+    const allData = (await Promise.all(
         Object.entries(upsList).map(async ([upsName, description]) => {
+            const data = await getDataFromUPS(upsName);
+            if(data === null) {
+                return null;
+            }
+            
             return {
                 ups: {
                     nutName: upsName,
                     description
                 },
-                data: await getDataFromUPS(upsName)
+                data
             };
         })
-    );
+    )).filter(data => data !== null);
     
     // Transform collected data for the sif sink
     const sifData = allData.map(({ups, data}) => ({
@@ -51,7 +62,7 @@ async function collect() {
             inputVoltage: parseFloat(data["input.voltage"]),
             outputVoltage: parseFloat(data["output.voltage"]),
             outputLoadPct: parseFloat(data["ups.load"]),
-            outputLoadkW: parseFloat(data["ups.load"]) * parseFloat(data["ups.realpower.nominal"]) / 100,
+            outputLoadW: parseFloat(data["ups.load"]) * parseFloat(data["ups.realpower.nominal"]) / 100,
             status: data["ups.status"]
         }
     }));
@@ -101,6 +112,7 @@ module.exports = {
             console.error(err);
         });
         nutServer.on("close", () => {
+            nutServer = null;
             console.info("nut server closed!");
         });
 
