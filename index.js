@@ -34,9 +34,41 @@
 const info = console.info;
 console.info = function() {
     process.stdout.write(`\x1b[1m[\x1b[31m${Date.now() / 1000}\x1b[0m\x1b[1m]\x1b[0m `);
-    info.apply(this, arguments)
+    info.apply(this, arguments);
 }
 
+const readline = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
+
+(async function() {
+    while(true) {
+        await new Promise(resolve => {
+            readline.question("", input => {
+                console.log("line in:", input)
+                if(input === "") {
+                    resolve();
+                    return;
+                }
+
+                if(sinks[input]) {
+                    console.info(`Reloading sink "${input}"`);
+                    sinks[input].cleanup();
+                    sinks[input].setup(globalConfig.sinks[input]);
+                }
+
+                if(sources[input]) {
+                    console.info(`Reloading sink "${input}"`);
+                    sources[input].cleanup();
+                    sources[input].setup(globalConfig.sources[input], sinks);
+                }
+
+                resolve();
+            });
+        });
+    }
+})();
 
 // Load the config for all sources and sinks
 const reloadConfig = require("./config").getConfig
@@ -65,6 +97,7 @@ var sinks = (async () => {
     const sinkConfigs = globalConfig.sinks;
     return sinkNames.reduce(
         async (sinkDict, sinkName) => {
+            sinkDict = await sinkDict;
             try {
                 const sinkController = require("./sinks/" + sinkName);
                 if(globalConfig.disableSinks === true) {
@@ -96,7 +129,7 @@ sinks.then(sinks => {
 
 // Load sources
 var sourceLoadTime = -Date.now();
-const sources = (async () => {
+var sources = (async () => {
     sinks = await sinks;
     const sourceFiles = await fs.promises.readdir("./sources");
     const sourceNames = (await Promise.all(
@@ -144,7 +177,8 @@ const sources = (async () => {
     );
 })();
 
-sources.then(sources => {
+sources.then(async sourcesIn => {
+    sources = await sourcesIn;
     sourceLoadTime += Date.now();
     const numSources = Object.keys(sources).length;
     console.log(

@@ -21,6 +21,7 @@ async function resetNutConnection() {
         await new Promise(resolve => {
             nutServer.on("close", () => {
                 console.info("cleared nut connection");
+                nutServer = null;
                 resolve();
             });
             nutServer.close();
