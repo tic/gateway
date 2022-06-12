@@ -41,7 +41,8 @@ function getConfig() {
             },
             nut: {
                 nutAddress: env("NUT_ADDRESS"),
-                nutPort: env("NUT_PORT")
+                nutPort: env("NUT_PORT"),
+                nutAutoReconn: env("NUT_AUTORECONNECT_COOLDOWN")
             }
         }
     }

@@ -1,6 +1,5 @@
 // Collects data from UPS devices
 
-const { connect } = require("mqtt");
 const Nut = require("node-nut");
 var nutServer = null;
 
@@ -8,6 +7,97 @@ var sinks = {};
 var config = null;
 var collectionInterval = null;
 var upsList = {};
+
+// Initiates a reset of the nut server connection,
+// including closing any existing connection,
+// opening a new one, and waiting for confirmation
+// of the new connection. Connection issues are
+// handled inside here, including automatic attempts
+// to re-connect should the connection be broken.
+async function resetNutConnection() {
+    // If the server currently exists,
+    // close it and wait for confirmation.
+    if(nutServer !== null) {
+        await new Promise(resolve => {
+            nutServer.on("close", () => {
+                console.info("cleared nut connection");
+                resolve();
+            });
+            nutServer.close();
+        });
+    }
+    
+    // Create a new server connection and,
+    // if unsuccessful, keep trying every
+    // 60 seconds.
+    let connected = false;
+    while(!connected) {
+        // Wait for the configured time between
+        // unsuccessfull reconnection attempts.
+        if(nutServer !== null) {
+            nutServer = null;
+            await new Promise(resolve => setTimeout(resolve, config.nutAutoReconn));
+        }
+
+        connected = await new Promise(resolve => {
+            let resolved = false;
+            nutServer = new Nut(config.nutPort, config.nutAddress);
+            nutServer.start();
+            
+            let connectionTimeout = setTimeout(() => {
+                // If the "ready" event has already been
+                // triggered, we don't need to do anything.
+                if(resolved) {
+                    return;
+                }
+
+                resolve(false);
+            }, 3000);
+            
+            nutServer.on("ready", () => {
+                // If the connection timeout was already
+                // triggered, we need to just stop here.
+                if(resolved) {
+                    return;
+                }
+
+                // Connection has been established!
+                resolved = true;
+                clearTimeout(connectionTimeout);
+
+                // With the fresh connection,
+                // refresh the UPS list.
+                nutServer.GetUPSList((list, err) => {
+                    if(err) {
+                        console.error("[nut] error trying to fetch ups data");
+                        console.error(err);
+                        nutServer.on("close", () => {
+                            nutServer = null;
+                            resolve(false);
+                        });
+                        nutServer.close();
+                    } else {
+                        upsList = list;
+                        resolve(true);
+                    }
+                });
+            });
+        });
+    }
+
+    // If the nut server encounters a fatal error,
+    // we need to attempt recovery by reinitializing
+    // the nut server object.
+    nutServer.on("error", err => {
+        // Report the error
+        console.error("[nut] nut server error:");
+        console.error(err);
+
+        // Re-create the nut server
+        console.info("[nut] recursively re-initializing the nut server");
+        resetNutConnection();
+    });
+}
 
 // Creates a promise wrapper around
 // node-nut's callback-style functions.
@@ -27,7 +117,7 @@ async function collect() {
     // Prevent some obvious errors that may come
     // when trying to use an anomalous nut server.
     if(nutServer === null) {
-        console.info("tried to use nutserver 'null'!");
+        console.info("[nut] tried to use nut server 'null'!");
     }
 
     // Fetch the data from the ups units
@@ -84,48 +174,7 @@ module.exports = {
     setup: async (configIn, sinksIn) => {
         sinks = sinksIn;
         config = configIn;
-        nutServer = new Nut(config.nutPort, config.nutAddress);
-        
-        const listReady = new Promise((resolve, _) => {
-            nutServer.on("ready", () => {
-                let resolved = false;
-                const connectTimeout = setTimeout(
-                    () => {
-                        resolved = true;
-                        resolve(new Error("connection timed out"));
-                    }, 
-                    10000
-                );
-                nutServer.GetUPSList((list, err) => {
-                    upsList = list;
-                    if(resolved === false) {
-                        clearTimeout(connectTimeout);
-                        resolve(err);
-                    }
-                });
-            });
-        });
-
-        // Attach handlers to the nut server
-        nutServer.on("error", err => {
-            console.info("nut error!");
-            console.error(err);
-        });
-        nutServer.on("close", () => {
-            nutServer = null;
-            console.info("nut server closed!");
-        });
-
-        // Initiate a connection to the nut server
-        nutServer.start();
-
-        // Wait until the connection has been attempted
-        const connectErr = await listReady;
-        if(connectErr) {
-            console.info("nut connect error!");
-            console.error(connectErr);
-            return;
-        }
+        await resetNutConnection();
 
         // Set the collection interval
         collectionInterval = setInterval(collect, 60000);
