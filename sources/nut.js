@@ -18,6 +18,7 @@ async function resetNutConnection() {
     // If the server currently exists,
     // close it and wait for confirmation.
     if(nutServer !== null) {
+        console.info("need to close existing nut connection")
         await new Promise(resolve => {
             nutServer.on("close", () => {
                 console.info("cleared nut connection");
