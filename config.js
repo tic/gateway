@@ -43,6 +43,9 @@ function getConfig() {
                 nutAddress: env("NUT_ADDRESS"),
                 nutPort: env("NUT_PORT"),
                 nutAutoReconn: env("NUT_AUTORECONNECT_COOLDOWN")
+            },
+            http: {
+                serverPort: env("HTTP_PORT")
             }
         }
     }
