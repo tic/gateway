@@ -128,9 +128,10 @@ sinks.then(sinks => {
 });
 
 // Load sources
-var sourceLoadTime = -Date.now();
+var sourceLoadTime;
 var sources = (async () => {
     sinks = await sinks;
+    sourceLoadTime = -Date.now();
     const sourceFiles = await fs.promises.readdir("./sources");
     const sourceNames = (await Promise.all(
         sourceFiles.map(async sourceFile => {
