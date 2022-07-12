@@ -3,6 +3,7 @@ import {
   configType,
   globalConfigType,
 } from './types/globalTypes';
+import { EcoVacsConfigType } from './types/sourceEcovacsTypes';
 
 const {
   config: dotenvConfig,
@@ -31,22 +32,22 @@ export const getConfig = (): globalConfigType => {
         clientId: env('SIF_CLIENTID'),
         username: env('SIF_USERNAME'),
         password: env('SIF_PASSWORD'),
-      },
+      } as configType,
     },
     sources: {
       ecovacs: {
         email: env('ECOVACS_EMAIL'),
         password: env('ECOVACS_PASSWORD'),
         country: env('ECOVACS_COUNTRY'),
-      } as configType,
+      } as EcoVacsConfigType,
       nut: {
         nutAddress: env('NUT_ADDRESS'),
         nutPort: env('NUT_PORT'),
         nutAutoReconn: env('NUT_AUTORECONNECT_COOLDOWN'),
-      },
+      } as configType,
       http: {
         serverPort: env('HTTP_PORT'),
-      },
+      } as configType,
     },
   };
   if (missingKeys.length > 0) {

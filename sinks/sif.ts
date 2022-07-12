@@ -8,7 +8,9 @@ import {
   CognitoUserPool,
   AuthenticationDetails,
 } from 'amazon-cognito-identity-js';
-import { configType, sinkType } from '../types/globalTypes';
+import {
+  configType,
+} from '../types/globalTypes';
 
 interface sifDataType {
   app_name: string,
@@ -127,4 +129,4 @@ export default {
     clearInterval(refreshInterval);
     return true;
   },
-} as sinkType;
+};
