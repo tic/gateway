@@ -1,11 +1,35 @@
 {
+  "name": "virtual-gateway",
+  "repository": "",
+  "version": "2.0.0",
+  "description": "A virtual gateway for coordinating and standardizing IoT data",
+  "main": "index.ts",
+  "scripts": {
+    "start": "/usr/local/bin/ts-node index",
+    "lint": "./node_modules/eslint/bin/eslint.js --ext .ts"
+  },
+  "author": "G. Michael Fitzgerald",
+  "license": "ISC",
   "dependencies": {
+    "@types/express": "^4.17.13",
     "amazon-cognito-identity-js": "^5.2.8",
     "dotenv": "^16.0.1",
     "ecovacs-deebot": "^0.8.0",
     "mqtt": "^4.3.7",
     "node-machine-id": "^1.1.12",
     "node-nut": "^1.0.3",
-    "node-os-utils": "^1.3.6"
+    "node-os-utils": "^1.3.6",
+    "ts-node": "^10.8.2",
+    "typescript": "^4.7.4"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.30.5",
+    "eslint": "^8.19.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.4",
+    "eslint-plugin-promise": "^6.0.0"
   }
 }
