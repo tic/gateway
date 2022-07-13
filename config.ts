@@ -1,16 +1,21 @@
 /* eslint-disable import/prefer-default-export */
 import {
-  configType,
-  globalConfigType,
+  config as dotenvConfig, DotenvParseOutput,
+} from 'dotenv';
+import {
+  ConfigType,
+  GlobalConfigType,
 } from './types/globalTypes';
+import { SifConfigType } from './types/sinkSifTypes';
 import { EcoVacsConfigType } from './types/sourceEcovacsTypes';
+import { MachineUsageConfigType } from './types/sourceMachineUsageTypes';
+import { NutConfigType } from './types/sourceNutTypes';
 
-const {
-  config: dotenvConfig,
-} = require('dotenv');
-
-export const getConfig = (): globalConfigType => {
-  const { parsed: envFile } = dotenvConfig();
+export const getConfig = (): GlobalConfigType => {
+  const envFile: DotenvParseOutput | undefined = dotenvConfig().parsed;
+  if (envFile === undefined) {
+    throw new Error('failed to load env file');
+  }
   const missingKeys: string[] = [];
   const env = (key: string) : string => {
     const value = envFile[key];
@@ -22,32 +27,39 @@ export const getConfig = (): globalConfigType => {
   };
 
   // The config is separated by the various files it needs to read from
-  const config: globalConfigType = {
+  const config: GlobalConfigType = {
     disableSinks: env('DISABLE_SINKS') === 'true',
     sourceWhitelist: env('SOURCE_WHITELIST') === '' ? [] : env('SOURCE_WHITELIST').split(','),
     sourceBlacklist: env('SOURCE_BLACKLIST') === '' ? [] : env('SOURCE_BLACKLIST').split(','),
     sinks: {
       sif: {
-        userPoolId: env('SIF_USERPOOLID'),
-        clientId: env('SIF_CLIENTID'),
         username: env('SIF_USERNAME'),
         password: env('SIF_PASSWORD'),
-      } as configType,
+        clientId: env('SIF_CLIENTID'),
+        userPoolId: env('SIF_USERPOOLID'),
+        brokerAddress: env('SIF_BROKER_ADDRESS'),
+      } as SifConfigType,
     },
     sources: {
+      machineUsage: {
+        collectionPeriodMs: parseInt(env('MACHINEUSAGE_COLLECTION_PERIOD_MS'), 10) || 60000,
+        freeTimePercentage: parseInt(env('MACHINEUSAGE_FREE_TIME_PCT'), 10) || 5,
+      } as MachineUsageConfigType,
       ecovacs: {
         email: env('ECOVACS_EMAIL'),
         password: env('ECOVACS_PASSWORD'),
         country: env('ECOVACS_COUNTRY'),
       } as EcoVacsConfigType,
       nut: {
-        nutAddress: env('NUT_ADDRESS'),
-        nutPort: env('NUT_PORT'),
-        nutAutoReconn: env('NUT_AUTORECONNECT_COOLDOWN'),
-      } as configType,
+        serverAddress: env('NUT_ADDRESS'),
+        serverPort: env('NUT_PORT'),
+        autoReconnectTimeoutMs: parseInt(env('NUT_CONNECTION_TIMEOUT_MS'), 10) || 30000,
+        collectionIntervalMs: parseInt(env('NUT_COLLECTION_PERIOD_MS'), 10) || 30000,
+        connectionRetryCooldownMs: parseInt(env('NUT_CONNECTION_RETRY_COOLDOWN_MS'), 10) || 60000,
+      } as NutConfigType,
       http: {
         serverPort: env('HTTP_PORT'),
-      } as configType,
+      } as ConfigType,
     },
   };
   if (missingKeys.length > 0) {

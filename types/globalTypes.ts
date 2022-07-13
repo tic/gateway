@@ -1,30 +1,30 @@
 /* eslint-disable no-unused-vars */
-export type configType = Record<string, string | number>;
+export type ConfigType = Record<string, string | number>;
 
-export interface globalConfigType {
+export interface GlobalConfigType {
   disableSinks: boolean,
   sourceWhitelist: string[],
   sourceBlacklist: string[],
-  sinks: Record<string, configType>,
-  sources: Record<string, configType>,
+  sinks: Record<string, ConfigType>,
+  sources: Record<string, ConfigType>,
 };
 
-export type setupMessage = {
+export type SetupMessage = {
   success: boolean;
   message?: string;
 };
 
-export interface sinkType {
+export interface SinkType {
   drain: (...args: unknown[]) => Promise<boolean>,
-  setup: (arg0: configType) => Promise<setupMessage>,
+  setup: (arg0: ConfigType) => Promise<SetupMessage>,
   cleanup: () => Promise<boolean>,
 };
 
-export type sinkDictionary = Record<string, sinkType>;
+export type SinkDictionary = Record<string, SinkType>;
 
-export interface sourceType {
-  setup: (arg0: configType, arg1: sinkDictionary) => Promise<setupMessage>;
+export interface SourceType {
+  setup: (arg0: ConfigType, arg1: SinkDictionary) => Promise<SetupMessage>;
   cleanup: () => Promise<boolean>,
 };
 
-export type sourceDictionary = Record<string, sourceType>;
+export type SourceDictionary = Record<string, SourceType>;

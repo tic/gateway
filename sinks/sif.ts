@@ -9,21 +9,18 @@ import {
   AuthenticationDetails,
 } from 'amazon-cognito-identity-js';
 import {
-  configType,
+  ConfigType,
+  SetupMessage,
+  SinkType,
 } from '../types/globalTypes';
+import {
+  SifDataType,
+  SifMetadataType,
+  SifMetricsType,
+  SifConfigType,
+} from '../types/sinkSifTypes';
 
-interface sifDataType {
-  app_name: string,
-  token: string,
-  data: {
-    time: number,
-    device?: string | null,
-    metadata: Record<string, string | number>,
-    payload: Record<string, string | number>,
-  },
-};
-
-let config: configType;
+let config: SifConfigType;
 let idToken: string;
 let refreshInterval: ReturnType<typeof setTimeout>;
 let cognitoUser: CognitoUser;
@@ -58,8 +55,8 @@ const refreshToken = async () : Promise<string> => {
 
 const drain = async (
   appName: string,
-  metrics: Record<string, string | number>,
-  metadata = {},
+  metrics: SifMetricsType,
+  metadata: SifMetadataType = {},
   timestamp = Date.now() / 1000,
   deviceId = null,
 ) : Promise<boolean> => {
@@ -73,7 +70,7 @@ const drain = async (
     return false;
   }
 
-  const blob: sifDataType = {
+  const blob: SifDataType = {
     app_name: appName,
     token: idToken,
     data: {
@@ -93,10 +90,8 @@ const drain = async (
 
 export default {
   drain,
-  setup: async (configIn: configType) : Promise<{
-    success: boolean,
-    message?: string,
-  }> => {
+  setup: async (_configIn: ConfigType) : Promise<SetupMessage> => {
+    const configIn = (_configIn as unknown) as SifConfigType;
     config = configIn;
     try {
       cognitoUser = new CognitoUser({
@@ -106,7 +101,7 @@ export default {
           ClientId: config.clientId as string,
         }),
       });
-      broker = mqttConnect('mqtt://broker.uvasif.org');
+      broker = mqttConnect(configIn.brokerAddress);
       // Refresh the token every 58 minutes (tokens valid for 1hr)
       if ((await refreshToken()) !== '') {
         return {
@@ -129,4 +124,4 @@ export default {
     clearInterval(refreshInterval);
     return true;
   },
-};
+} as SinkType;

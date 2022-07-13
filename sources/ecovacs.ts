@@ -5,9 +5,10 @@ import {
 } from 'ecovacs-deebot';
 import nodeMachineId from 'node-machine-id';
 import {
-  setupMessage,
-  sinkDictionary,
-  sourceType,
+  ConfigType,
+  SetupMessage,
+  SinkDictionary,
+  SourceType,
 } from '../types/globalTypes';
 import {
   appName,
@@ -40,7 +41,7 @@ let intervalLength = activeInterval;
 
 // Reject a data collection promise after a time
 let vacuums: Vacuum[];
-let sinks: sinkDictionary = {};
+let sinks: SinkDictionary = {};
 
 // Small helper function to switch
 // the collection interval around.
@@ -162,7 +163,8 @@ const collect = async () : Promise<void> => {
 };
 
 export default {
-  setup: async (configIn: EcoVacsConfigType, sinksIn: sinkDictionary) : Promise<setupMessage> => {
+  setup: async (_configIn: ConfigType, sinksIn: SinkDictionary) : Promise<SetupMessage> => {
+    const configIn = (_configIn as unknown) as EcoVacsConfigType;
     sinks = sinksIn;
     const continent = countries[configIn.country.toUpperCase()].continent.toLowerCase();
     const api = new EcoVacsAPI(
@@ -264,4 +266,4 @@ export default {
     clearInterval(collectionInterval);
     return true;
   },
-} as sourceType;
+} as SourceType;

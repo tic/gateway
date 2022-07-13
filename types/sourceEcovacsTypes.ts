@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-shadow */
 import { EcoVacsAPI } from 'ecovacs-deebot';
-import { configType } from './globalTypes';
+import { ConfigType } from './globalTypes';
 
 export const appName = 'ecovacs';
 export const activeInterval = 45000;
@@ -13,7 +13,7 @@ export enum IntervalModeEnum {
   PASSIVE = 'PASSIVE',
 };
 
-export interface EcoVacsConfigType extends configType {
+export interface EcoVacsConfigType extends ConfigType {
   email: string,
   password: string,
   country: string,
