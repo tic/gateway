@@ -1,4 +1,7 @@
-import { createServer } from 'http';
+import {
+  createServer,
+  Server,
+} from 'http';
 import {
   configType,
   setupMessage,
@@ -14,7 +17,7 @@ import {
   parsedRequestType,
 } from '../types/sourceHttpTypes';
 
-let server;
+let server: Server;
 let sinks: sinkDictionary;
 
 const interpreters: Record<string, InterpreterType> = {
@@ -49,11 +52,11 @@ class HttpInputError extends Error {
   }
 }
 
-async function requestHandler(request, response) {
+async function requestHandler(request: any, response: any) {
   try {
     if (request.method === 'POST') {
       const requestResult: parsedRequestType = await new Promise((resolve) => {
-        request.on('data', (postData) => {
+        request.on('data', (postData: any) => {
           let parsedBody : {
             format: string,
             data: Record<string, any>,

@@ -5,8 +5,9 @@
   "description": "A virtual gateway for coordinating and standardizing IoT data",
   "main": "index.ts",
   "scripts": {
-    "start": "/usr/local/bin/ts-node index",
-    "lint": "./node_modules/eslint/bin/eslint.js --ext .ts"
+    "start-dev": "nodemon index.ts",
+    "start": "ts-node index",
+    "lint": "eslint --ext .ts ./"
   },
   "author": "G. Michael Fitzgerald",
   "license": "ISC",
@@ -23,6 +24,7 @@
     "typescript": "^4.7.4"
   },
   "devDependencies": {
+    "nodemon": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "eslint": "^8.19.0",
@@ -31,5 +33,8 @@
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-n": "^15.2.4",
     "eslint-plugin-promise": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=16.6.0"
   }
 }
