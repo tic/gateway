@@ -1,9 +1,4 @@
 import {
-  os,
-  netstat,
-  cpu,
-} from 'node-os-utils';
-import {
   SinkDictionary,
   SetupMessage,
   ConfigType,
@@ -18,6 +13,12 @@ import {
   SifMetadataType,
   SifMetricsType,
 } from '../types/sinkSifTypes';
+
+const {
+  os,
+  netstat,
+  cpu,
+} = require('node-os-utils');
 
 let collectionInterval: ReturnType<typeof setInterval>;
 let sinks: SinkDictionary;

@@ -1,5 +1,4 @@
 // Collects data from UPS devices
-import Nut from 'node-nut';
 import {
   ConfigType,
   SetupMessage,
@@ -18,6 +17,8 @@ import {
   UpsVarsType,
 } from '../types/sourceNutTypes';
 
+const Nut = require('node-nut');
+
 let nutServer: NutServerType = {
   configured: false,
   start: () => null,
@@ -34,6 +35,14 @@ const connectToNutServer = () : Promise<boolean> => new Promise<boolean>((resolv
   let resolved = false;
   nutServer = new Nut(config.serverPort, config.serverAddress);
   nutServer.configured = false;
+  nutServer.on('error', (error) => {
+    console.info('[NUT] error in server connection');
+    console.error(error);
+    if (!resolved) {
+      resolved = true;
+      resolve(false);
+    }
+  });
   nutServer.start();
   const connectionTimeout = setTimeout(() => {
     if (!resolved) {
@@ -146,6 +155,7 @@ async function collect() {
   const foundData: UpsDataPacket[] = (await Promise.all<UpsDataPacket | null>(
     upsEquipmentList.map(async (ups) => {
       const data = await getDataFromUPS(ups);
+      console.log(data);
       return data === null
         ? null
         : {
@@ -191,7 +201,7 @@ const setup = async (_configIn: ConfigType, sinksIn: SinkDictionary) : Promise<S
   } catch (error) {
     return {
       success: false,
-      message: error,
+      message: error as string,
     };
   }
   collectionInterval = setInterval(collect, configIn.collectionIntervalMs);

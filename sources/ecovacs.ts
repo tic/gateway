@@ -3,7 +3,7 @@ import {
   EcoVacsAPI,
   countries,
 } from 'ecovacs-deebot';
-import nodeMachineId from 'node-machine-id';
+import { machineIdSync } from 'node-machine-id';
 import {
   ConfigType,
   SetupMessage,
@@ -96,8 +96,12 @@ const collect = async () : Promise<void> => {
       const vacuumData: FullVacuumDataReportType = await Promise.all(
         dataResolutionPromises,
       ) as FullVacuumDataReportType;
-      const cleanMode = CleanModeConversionMap[vacuumData[1] ?? ''] ?? CleanModeEnum.OTHER;
-      const chargeMode = ChargeModeConversionMap[vacuumData[2] ?? ''] ?? ChargeModeEnum.OTHER;
+      const cleanMode = vacuumData[1] === null
+        ? CleanModeEnum.OTHER
+        : CleanModeConversionMap[vacuumData[1]];
+      const chargeMode = vacuumData[2] === null
+        ? ChargeModeEnum.OTHER
+        : ChargeModeConversionMap[vacuumData[2]];
       const metrics: VacuumMetricsType = {};
       if (vacuumData[0] !== null) {
         [metrics.battery] = vacuumData;
@@ -116,7 +120,9 @@ const collect = async () : Promise<void> => {
           metrics.charge_state = chargeMode;
         }
       }
-      Object.entries(vacuumData[3] ?? {}).forEach(([consumable, value]) => {
+      type Consumable = 'main_brush' | 'side_brush' | 'filter';
+      Object.entries(vacuumData[3] ?? {}).forEach(([_consumable, value]) => {
+        const consumable = (_consumable as unknown) as Consumable;
         if (value !== undefined && value !== null) {
           metrics[consumable] = value;
         }
@@ -152,7 +158,7 @@ const collect = async () : Promise<void> => {
   )).filter((packetAttempt) => packetAttempt !== null) as VacuumDataPacketType[];
   dataPackets.forEach(({ metrics, metadata }) => {
     console.info('draining ecovacs data for device %s', metadata.deviceId);
-    sinks.sif.drain(
+    sinks.sif?.drain(
       appName,
       metrics,
       metadata,
@@ -162,108 +168,112 @@ const collect = async () : Promise<void> => {
   });
 };
 
-export default {
-  setup: async (_configIn: ConfigType, sinksIn: SinkDictionary) : Promise<SetupMessage> => {
-    const configIn = (_configIn as unknown) as EcoVacsConfigType;
-    sinks = sinksIn;
-    const continent = countries[configIn.country.toUpperCase()].continent.toLowerCase();
-    const api = new EcoVacsAPI(
-      EcoVacsAPI.getDeviceId(nodeMachineId.machineIdSync(), 0),
-      configIn.country,
-    );
-    try {
-      await api.connect(configIn.email, EcoVacsAPI.md5(configIn.password));
-    } catch {
-      return {
-        success: false,
-        message: 'failed to connect ecovacs api',
-      };
-    }
-
-    try {
-      const devices = await api.devices();
-      vacuums = devices.map((device, index: number) => ({
-        _id: index,
-        deviceId: device.did,
-        connected: false,
-        nickname: device.nick,
-        deviceType: device.deviceName, // e.g. "DEEBOT N79S/SE"
-        eventResolveFunctions: [], // used to group event responses in collect()
-        vacbot: api.getVacBot(
-          api.uid,
-          EcoVacsAPI.REALM,
-          api.resource,
-          api.user_access_token,
-          device,
-          continent,
-        ),
-      }));
-    } catch {
-      return {
-        success: false,
-        message: 'failed to fetch ecovacs device list and map it to a vacuums list',
-      };
-    }
-
-    try {
-      const pendingConnections: Promise<boolean>[] = vacuums.map(async (vacuum, vacuumIndex: number) => {
-        vacuum.vacbot.connect();
-        const innerPromise = new Promise((resolve) => {
-          const connectionTimeout = setTimeout(() => resolve(false), 15000);
-          vacuum.vacbot.on('ready', () => {
-            clearTimeout(connectionTimeout);
-            vacuums[vacuumIndex].connected = true;
-            Object.values(vacuumCommandsToEvents).forEach((event, eventIndex) => {
-              vacuum.vacbot.on(event, (value: EventReportType) => {
-                const resolvingFunction = vacuum.eventResolveFunctions[eventIndex];
-                if (resolvingFunction !== null) {
-                  resolvingFunction(value);
-                } else {
-                  console.warn('[ECOVACS] unhandled operation callback %s', event);
-                }
-              });
-            });
-            resolve(true);
-          });
-          vacuum.vacbot.on('error', (error: Error) => {
-            console.error('[ECOVACS] error in a vacuum\'s connection innerPromise');
-            console.error(error);
-          });
-        });
-        return innerPromise as Promise<boolean>;
-      });
-      if ((await Promise.all(pendingConnections)).includes(false)) {
-        throw new Error('a connection failed');
-      }
-    } catch {
-      return {
-        success: false,
-        message: 'failed to connect to 1 or more ecovacs devices',
-      };
-    }
-
-    try {
-      collect();
-
-      // The collect() function manages switching
-      // between the active and passive intervals.
-      // Here we can assume the active interval and
-      // the first collect() call will either keep
-      // it or switch to the passive interval.
-      switchInterval(IntervalModeEnum.ACTIVE);
-    } catch {
-      return {
-        success: false,
-        message: 'failed initial round of collection',
-      };
-    }
-
+const setup = async (_configIn: ConfigType, sinksIn: SinkDictionary) : Promise<SetupMessage> => {
+  const configIn = (_configIn as unknown) as EcoVacsConfigType;
+  sinks = sinksIn;
+  const continent = countries[configIn.country.toUpperCase()].continent.toLowerCase();
+  const api = new EcoVacsAPI(
+    EcoVacsAPI.getDeviceId(machineIdSync(), 0),
+    configIn.country,
+  );
+  try {
+    await api.connect(configIn.email, EcoVacsAPI.md5(configIn.password));
+  } catch {
     return {
-      success: true,
+      success: false,
+      message: 'failed to connect ecovacs api',
     };
-  },
-  cleanup: async () => {
-    clearInterval(collectionInterval);
-    return true;
-  },
+  }
+
+  try {
+    const devices: Record<string, any>[] = await api.devices();
+    vacuums = devices.map((device, index: number) => ({
+      _id: index,
+      deviceId: device.did,
+      connected: false,
+      nickname: device.nick,
+      deviceType: device.deviceName, // e.g. "DEEBOT N79S/SE"
+      eventResolveFunctions: [], // used to group event responses in collect()
+      vacbot: api.getVacBot(
+        api.uid,
+        EcoVacsAPI.REALM,
+        api.resource,
+        api.user_access_token,
+        device,
+        continent,
+      ),
+    } as Vacuum));
+  } catch {
+    return {
+      success: false,
+      message: 'failed to fetch ecovacs device list and map it to a vacuums list',
+    };
+  }
+
+  try {
+    const pendingConnections: Promise<boolean>[] = vacuums.map(async (vacuum, vacuumIndex: number) => {
+      vacuum.vacbot.connect();
+      const innerPromise = new Promise((resolve) => {
+        const connectionTimeout = setTimeout(() => resolve(false), 15000);
+        vacuum.vacbot.on('ready', () => {
+          clearTimeout(connectionTimeout);
+          vacuums[vacuumIndex].connected = true;
+          Object.values(vacuumCommandsToEvents).forEach((event, eventIndex) => {
+            vacuum.vacbot.on(event, (value: EventReportType) => {
+              const resolvingFunction = vacuum.eventResolveFunctions[eventIndex];
+              if (resolvingFunction !== null) {
+                resolvingFunction(value);
+              } else {
+                console.warn('[ECOVACS] unhandled operation callback %s', event);
+              }
+            });
+          });
+          resolve(true);
+        });
+        vacuum.vacbot.on('error', (error: Error) => {
+          console.error('[ECOVACS] error in a vacuum\'s connection innerPromise');
+          console.error(error);
+        });
+      });
+      return innerPromise as Promise<boolean>;
+    });
+    if ((await Promise.all(pendingConnections)).includes(false)) {
+      throw new Error('a connection failed');
+    }
+  } catch {
+    return {
+      success: false,
+      message: 'failed to connect to 1 or more ecovacs devices',
+    };
+  }
+
+  try {
+    collect();
+
+    // The collect() function manages switching
+    // between the active and passive intervals.
+    // Here we can assume the active interval and
+    // the first collect() call will either keep
+    // it or switch to the passive interval.
+    switchInterval(IntervalModeEnum.ACTIVE);
+  } catch {
+    return {
+      success: false,
+      message: 'failed initial round of collection',
+    };
+  }
+
+  return {
+    success: true,
+  };
+};
+
+const cleanup = async () => {
+  clearInterval(collectionInterval);
+  return true;
+};
+
+export default {
+  setup,
+  cleanup,
 } as SourceType;

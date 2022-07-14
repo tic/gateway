@@ -3,10 +3,10 @@ import {
   Server,
 } from 'http';
 import {
-  configType,
-  setupMessage,
-  sinkDictionary,
-  sourceType,
+  ConfigType,
+  SetupMessage,
+  SinkDictionary,
+  SourceType,
 } from '../types/globalTypes';
 import {
   InterpreterType,
@@ -18,7 +18,7 @@ import {
 } from '../types/sourceHttpTypes';
 
 let server: Server;
-let sinks: sinkDictionary;
+let sinks: SinkDictionary;
 
 const interpreters: Record<string, InterpreterType> = {
   sif: ((data: {
@@ -102,7 +102,7 @@ async function requestHandler(request: any, response: any) {
   }
 }
 
-const setup = async (configIn: configType, sinksIn: sinkDictionary) : Promise<setupMessage> => {
+const setup = async (configIn: ConfigType, sinksIn: SinkDictionary) : Promise<SetupMessage> => {
   sinks = sinksIn;
   server = createServer(requestHandler);
   server.listen(configIn.serverPort);
@@ -119,4 +119,4 @@ const cleanup = async () => {
 export default {
   setup,
   cleanup,
-} as sourceType;
+} as SourceType;

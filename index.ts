@@ -1,18 +1,18 @@
 import fs from 'fs';
 import { createInterface } from 'readline';
 import {
-  configType,
-  sinkDictionary,
-  sinkType,
-  sourceDictionary,
-  sourceType,
+  ConfigType,
+  SinkDictionary,
+  SinkType,
+  SourceDictionary,
+  SourceType,
 } from './types/globalTypes';
 import { getConfig } from './config';
 
 // Load the config for all sources and sinks
 const globalConfig = getConfig();
-let sinkStorage: sinkDictionary = {};
-let sourceStorage: sourceDictionary = {};
+let sinkStorage: SinkDictionary = {};
+let sourceStorage: SourceDictionary = {};
 const fileFormatRegexp = /^(.*)\.ts$/i;
 
 if (globalConfig.disableSinks) {
@@ -51,7 +51,7 @@ if (globalConfig.disableSinks) {
 
 // Load sinks
 let sinkLoadTime = -Date.now();
-const sinksPromise: Promise<sinkDictionary> = (async () => {
+const sinksPromise: Promise<SinkDictionary> = (async () => {
   const candidateFsObjects = await fs.promises.readdir('./sinks');
   const sinkNames: string[] = (await Promise.all(
     candidateFsObjects.map(async (fsObject : string) => {
@@ -68,24 +68,25 @@ const sinksPromise: Promise<sinkDictionary> = (async () => {
     }),
   )).filter((sinkName) => sinkName !== null) as string[];
   const sinkConfigs = globalConfig.sinks;
-  const readySinks: ([string, sinkType])[] = await Promise.all(
-    sinkNames.map(async (sinkName: string): Promise<[string, sinkType]> => {
+  const readySinks: ([string, SinkType])[] = await Promise.all(
+    sinkNames.map(async (sinkName: string): Promise<[string, SinkType]> => {
       const sinkToRead = `./sinks/${sinkName}`;
       // eslint-disable-next-line import/no-dynamic-require, global-require
-      const sinkController = require(sinkToRead).default;
+      const sinkController = require(sinkToRead).default as SinkType;
       if (globalConfig.disableSinks === true) {
-        sinkController.drain = async (): Promise<boolean> => {
+        sinkController.drain = async (...args: any[]): Promise<boolean> => {
           console.info('skipped sink for destination \'%s\'', sinkName);
+          console.info(args);
           return true;
         };
       }
-      const sinkConfig: configType = sinkConfigs[sinkName] || {};
+      const sinkConfig: ConfigType = sinkConfigs[sinkName] || {};
       await sinkController.setup(sinkConfig);
       return [sinkName, sinkController];
     }),
   );
   return readySinks.reduce(
-    (accumulator: sinkDictionary, [sinkName, sinkController]: [string, sinkType]) => {
+    (accumulator: SinkDictionary, [sinkName, sinkController]: [string, SinkType]) => {
       accumulator[sinkName] = sinkController;
       return accumulator;
     },
@@ -96,7 +97,7 @@ const sinksPromise: Promise<sinkDictionary> = (async () => {
 // Load sources
 let sourceLoadTime : number;
 const sourcesPromise = (async () => {
-  await sinksPromise;
+  sinkStorage = await sinksPromise;
   sourceLoadTime = -Date.now();
   const sourceFiles = await fs.promises.readdir('./sources');
   const sourceNames = (await Promise.all(
@@ -124,18 +125,18 @@ const sourcesPromise = (async () => {
   )).filter((sourceName) => sourceName !== null) as string[];
 
   const sourceConfigs = globalConfig.sources;
-  const readySources: ([string, sourceType])[] = await Promise.all(
-    sourceNames.map(async (sourceName: string): Promise<[string, sourceType]> => {
+  const readySources: ([string, SourceType])[] = await Promise.all(
+    sourceNames.map(async (sourceName: string): Promise<[string, SourceType]> => {
       const sourceToRead = `./sources/${sourceName}`;
       // eslint-disable-next-line import/no-dynamic-require, global-require
-      const sourceController = require(sourceToRead).default;
-      const sourceConfig: configType = sourceConfigs[sourceName] || {};
-      await sourceController.setup(sourceConfig);
+      const sourceController = require(sourceToRead).default as SourceType;
+      const sourceConfig: ConfigType = sourceConfigs[sourceName] || {};
+      await sourceController.setup(sourceConfig, sinkStorage);
       return [sourceName, sourceController];
     }),
   );
   return readySources.reduce(
-    (accumulator: sourceDictionary, [sourceName, sourceController]: [string, sourceType]) => {
+    (accumulator: SourceDictionary, [sourceName, sourceController]: [string, SourceType]) => {
       accumulator[sourceName] = sourceController;
       return accumulator;
     },
@@ -143,8 +144,7 @@ const sourcesPromise = (async () => {
   );
 })();
 
-sinksPromise.then((loadedSinks: sinkDictionary) => {
-  sinkStorage = loadedSinks;
+sinksPromise.then((loadedSinks: SinkDictionary) => {
   sinkLoadTime += Date.now();
   const numSinks = Object.keys(loadedSinks).length;
   console.log(
@@ -155,7 +155,7 @@ sinksPromise.then((loadedSinks: sinkDictionary) => {
   );
 });
 
-sourcesPromise.then(async (loadedSources : sourceDictionary) => {
+sourcesPromise.then(async (loadedSources : SourceDictionary) => {
   sourceStorage = loadedSources;
   sourceLoadTime += Date.now();
   const numSources = Object.keys(loadedSources).length;

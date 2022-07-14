@@ -64,7 +64,7 @@ export const getConfig = (): GlobalConfigType => {
   };
   if (missingKeys.length > 0) {
     console.warn('!!! WARNING: the config referenced environment variables that were not found in the .env file:');
-    console.warn(`\t- ${missingKeys.join('\t- ')}\n`);
+    console.warn(`\t- ${missingKeys.join('\n\t- ')}\n`);
   }
   return config;
 };

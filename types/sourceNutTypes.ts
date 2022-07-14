@@ -8,7 +8,15 @@ export type UpsType = {
 };
 
 export type UpsVarsType = {
-
+  'device.serial': string,
+  'battery.charge': string,
+  'battery.runtime': string,
+  'battery.voltage': string,
+  'input.voltage': string,
+  'output.voltage': string,
+  'ups.load': string,
+  'ups.realpower.nominal': string,
+  'ups.status': string,
 };
 
 export type UpsDataPacket = {
