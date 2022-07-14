@@ -30,8 +30,10 @@
 // */
 // Source: https://stackoverflow.com/questions/9781218/how-to-change-node-jss-console-font-color
 const { info } = console;
-console.info = () => {
+const consoleInfo = (...args: any) => {
   process.stdout.write(`\x1b[1m[\x1b[31m${Date.now() / 1000}\x1b[0m\x1b[1m]\x1b[0m `);
   // eslint-disable-next-line no-undef
-  info.apply(this, this.arguments);
+  info(...args);
 };
+
+export default consoleInfo;

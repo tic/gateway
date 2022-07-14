@@ -8,6 +8,9 @@ import {
   SourceType,
 } from './types/globalTypes';
 import { getConfig } from './config';
+import consoleInfo from './util';
+
+console.info = consoleInfo;
 
 // Load the config for all sources and sinks
 const globalConfig = getConfig();
