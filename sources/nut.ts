@@ -69,6 +69,7 @@ const connectToNutServer = () : Promise<boolean> => new Promise<boolean>((resolv
         name: upsName,
         description: upsDescription,
       } as UpsType));
+      resolve(true);
     });
   });
 });
