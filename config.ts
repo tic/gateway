@@ -39,6 +39,12 @@ export const getConfig = (): GlobalConfigType => {
         userPoolId: env('SIF_USERPOOLID'),
         brokerAddress: env('SIF_BROKER_ADDRESS'),
       } as SifConfigType,
+      influx: {
+        token: env('INFLUX_TOKEN'),
+        url: env('INFLUX_URL'),
+        org: env('INFLUX_ORG'),
+        bucket: env('INFLUX_BUCKET'),
+      },
     },
     sources: {
       machineUsage: {

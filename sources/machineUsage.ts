@@ -29,24 +29,30 @@ const collect = async () : Promise<void> => {
     netstat.inOut(collectTimeMs),
     cpu.usage(collectTimeMs),
   ]);
+
   const metrics: SifMetricsType = {};
   if (netdata?.total?.inputMb !== undefined) {
     metrics.netIn = netdata.total.inputMb;
   }
+
   if (netdata?.total?.outputMb !== undefined) {
     metrics.netOut = netdata.total.outputMb;
   }
+
   if (cpudata !== undefined) {
     metrics.cpuUsage = cpudata;
   }
+
   if (Object.keys(metrics).length === 0) {
     return;
   }
+
   const metadata: SifMetadataType = {
     machineName: os.hostname().toLowerCase(),
   };
+
   console.info('draining machineUsage data for %s', metadata.machineName);
-  sinks.sif.drain(
+  sinks.influx?.drain(
     'machineUsage',
     metrics,
     metadata,
@@ -59,9 +65,7 @@ const setup = async (_configIn: ConfigType, sinksIn: SinkDictionary) : Promise<S
   collect();
   collectionInterval = setInterval(collect, configIn.collectionPeriodMs);
   collectTimeMs = configIn.collectionPeriodMs * (configIn.freeTimePercentage / 100);
-  return {
-    success: true,
-  };
+  return { success: true };
 };
 
 const cleanup = async () : Promise<boolean> => {

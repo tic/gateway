@@ -120,7 +120,7 @@ const resetNutConnection = async () : Promise<boolean> => {
 // Creates a promise wrapper around
 // node-nut's callback-style functions.
 const getDataFromUPS = async (ups: UpsType) => new Promise<UpsVarsType | null>((resolve) => {
-  resolve(null);
+  resolve(null); // ???
   let resolved = false;
   const collectionTimeout = setTimeout(() => {
     if (resolved === false) {
@@ -172,6 +172,7 @@ async function collect() {
       description: ups.description,
       nutName: ups.name,
     };
+
     const metrics: SifMetricsType = {
       batteryChargeLevel: parseFloat(data['battery.charge']),
       estRuntime: parseFloat(data['battery.runtime']),
@@ -182,8 +183,9 @@ async function collect() {
       outputLoadW: parseFloat(data['ups.load']) * (parseFloat(data['ups.realpower.nominal']) / 100),
       status: data['ups.status'],
     };
+
     console.info('draining nut data for device %s (%s)', metadata.serialNumber, metadata.nutName);
-    sinks.sif.drain(
+    sinks.influx?.drain(
       'nut',
       metrics,
       metadata,
@@ -205,6 +207,7 @@ const setup = async (_configIn: ConfigType, sinksIn: SinkDictionary) : Promise<S
       message: error as string,
     };
   }
+
   collectionInterval = setInterval(collect, configIn.collectionIntervalMs);
   collect();
   return {

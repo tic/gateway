@@ -12,13 +12,13 @@ import {
   ConfigType,
   SetupMessage,
   SinkType,
-} from '../types/globalTypes';
+} from '../../types/globalTypes';
 import {
   SifDataType,
   SifMetadataType,
   SifMetricsType,
   SifConfigType,
-} from '../types/sinkSifTypes';
+} from '../../types/sinkSifTypes';
 
 let config: SifConfigType;
 let idToken: string;

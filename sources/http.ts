@@ -84,7 +84,7 @@ async function requestHandler(request: any, response: any) {
       }
       const processed: void | InterpreterReturnType = interpreter(data);
       if (processed !== undefined) {
-        sinks.sif.drain(...processed);
+        sinks.influx?.drain(...processed);
       }
       return;
     }

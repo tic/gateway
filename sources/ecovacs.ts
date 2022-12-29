@@ -158,7 +158,7 @@ const collect = async () : Promise<void> => {
   )).filter((packetAttempt) => packetAttempt !== null) as VacuumDataPacketType[];
   dataPackets.forEach(({ metrics, metadata }) => {
     console.info('draining ecovacs data for device %s', metadata.deviceId);
-    sinks.sif?.drain(
+    sinks.influx?.drain(
       appName,
       metrics,
       metadata,
